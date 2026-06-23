@@ -211,7 +211,7 @@ cat .git/refs/heads/main
 
 ### Fast-forward 机制与 merge
 
-已写小说为例，你和同事一起写同一本小说，主分支 `main` = 出版社定稿原稿。
+以写小说为例，你和同事一起写同一本小说，主分支 `main` = 出版社定稿原稿。
 Fast-forward（快进合并）：**不需要创建新 commit，直接把指针往前移。**
 - 最开始只有一份原稿 `main`，内容：第 1~5 章
 - 你拉了个新分支 `xiaoming`，准备写第 6、7 章
@@ -308,42 +308,7 @@ git rebase origin/main    # 把 feat/login 重新接到 main 之后
 
 ### switch main
 
-只有这两种场景才需要切：
-
-#### 场景 1：你要更新主线 main 的代码
-
-比如你准备把开发好的功能合并到 main：
-
-bash
-
-运行
-
-```
-git switch main
-git pull    # 拉线上最新main，防止合并冲突
-git merge feature
-```
-
-#### 场景 2：你要在 feature 分支通过 rebase 同步主线最新代码
-
-不用切 main，直接在功能分支执行：
-
-bash
-
-运行
-
-```
-git fetch origin
-git rebase origin/main
-```
-
-不需要 `switch main` 再 pull。
-
-#### 例子 1：日常在自己功能分支同步代码（不用切 main）
-
-bash
-
-运行
+***例子 1：日常在自己功能分支同步代码（不用切 main）***
 
 ```
 # 当前在 feature 分支
@@ -352,11 +317,7 @@ git pull --rebase
 
 只更新当前 feature 分支。
 
-#### 例子 2：准备上线合并前，必须切 main 拉最新
-
-bash
-
-运行
+***例子 2：准备上线合并前，必须切 main 拉最新***
 
 ```
 git switch main
@@ -477,13 +438,12 @@ git remote set-url origin git@github.com:用户名/仓库名.git
 ```bash
 # 首次直接clone即可
 git clone xxxx
-
-
 ```
 ##### 个人功能分支
 分支这条路只有你一个人走，直接 rebase变基
 ```
 # 非首次
+git fetch origin <branch>
 git fetch origin main        # 只拉取主main最新
 git fetch origin             # 拉取所有分支最新信息，团队多分支场景
 ```
@@ -562,7 +522,8 @@ git pull
 git merge --no-ff feature -m "上线：xxx功能"
 
 # 推送到远程主线，正式上线
-git push origin main
+git push origin main         # 仅首次推送需要，因为要绑定远程仓库分支
+git push                     # 非首次，之前已经push过了
 # 清理本地废弃功能分支
 git branch -d feature/xxx
 ```
