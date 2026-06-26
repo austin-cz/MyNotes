@@ -6,45 +6,58 @@
       {
         "id": "26e55b0c9b68e5e3",
         "type": "tabs",
-        "dimension": 68.99063475546306,
+        "dimension": 67.02898550724638,
         "children": [
           {
-            "id": "da9171d96db176bd",
+            "id": "c552d0d90e21598b",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "opencode/Git.md",
+                "file": "opencode/opencode.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "Git"
-            },
-            "group": "50bdd592e1b6fcda"
+              "title": "opencode"
+            }
+          },
+          {
+            "id": "6c970fdfeb776461",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "tmp_files/5-advanced/02b-agent-patterns.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "02b-agent-patterns"
+            }
           }
-        ]
+        ],
+        "currentTab": 1
       },
       {
-        "id": "7a464e62f53380f5",
+        "id": "4d7b73aa420642d2",
         "type": "tabs",
-        "dimension": 31.009365244536944,
+        "dimension": 32.971014492753625,
         "children": [
           {
-            "id": "c56f60e91e43411a",
+            "id": "513cd8e5bb1e24f3",
             "type": "leaf",
             "state": {
               "type": "outline",
               "state": {
-                "file": "opencode/Git.md",
+                "file": "tmp_files/5-advanced/02b-agent-patterns.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
               },
               "icon": "lucide-list",
-              "title": "Git 的大纲"
-            },
-            "group": "50bdd592e1b6fcda"
+              "title": "02b-agent-patterns 的大纲"
+            }
           }
         ]
       }
@@ -103,7 +116,7 @@
       }
     ],
     "direction": "horizontal",
-    "width": 200
+    "width": 235.5
   },
   "right": {
     "id": "b024e676c06ce0b2",
@@ -216,7 +229,7 @@
       }
     ],
     "direction": "horizontal",
-    "width": 330.5
+    "width": 293.5
   },
   "left-ribbon": {
     "hiddenItems": {
@@ -233,46 +246,46 @@
       "opencode-obsidian:OpenCode": false
     }
   },
-  "active": "da9171d96db176bd",
+  "active": "5f0ec04f0aa81d7c",
   "lastOpenFiles": [
+    "tmp_files/5-advanced/02a-agent-quickstart.md",
+    "tmp_files/5-advanced/01b-config-advanced.md",
+    "tmp_files/5-advanced/01a-config-basics.md",
     "opencode/opencode.md",
-    "opencode/Git.md",
-    "tmp_files/4-scenarios/coder-intranet.md",
-    "tmp_files/4-scenarios/coder-agents.md",
-    "tmp_files/4-scenarios/index.md",
-    "tmp_files/4-scenarios/coder-cicd.md",
-    "tmp_files/4-scenarios/coder-daily.md",
-    "AGENTS.md",
     "tmp_files/jiaofu.md",
-    "opencode/github流.md",
+    "tmp_files/appendix/zen.md",
+    "tmp_files/appendix/prompts.md",
+    "tmp_files/appendix/providers.md",
+    "tmp_files/5-advanced/25-git-worktree.md",
+    "tmp_files/appendix/ecosystem.md",
+    "tmp_files/appendix/config-ref.md",
+    "tmp_files/5-advanced/17-tools.md",
+    "tmp_files/5-advanced/16-share.md",
+    "tmp_files/5-advanced/15-gitlab.md",
     "tmp_files/5-advanced/14-github.md",
-    "tmp_files/4-scenarios/coder-docs-git.md",
-    "tmp_files/4-scenarios/coder-refactor.md",
-    "工作临时文件/流程.md",
+    "tmp_files/5-advanced/11-enterprise.md",
+    "tmp_files/5-advanced/08a-ide-vscode.md",
+    "tmp_files/5-advanced/06b-keybinds.md",
+    "tmp_files/5-advanced/03c-skills-patterns.md",
+    "tmp_files/5-advanced/03b-skills-advanced.md",
+    "tmp_files/5-advanced/03a-skills-basics.md",
+    "tmp_files/5-advanced/02d-agent-advanced.md",
+    "tmp_files/5-advanced/02c-agent-permissions.md",
+    "tmp_files/5-advanced/02b-agent-patterns.md",
+    "opencode/bak/coder-intranet.md",
+    "opencode/bak",
+    "tmp_files/4-scenarios/index.md",
     "工作临时文件/~$流程图.pptx",
     "tmp_files/流程图.pptx",
     "工作临时文件/delivery-flow~142DC.tmp",
     "工作临时文件/delivery-flow~102A6.tmp",
     "工作临时文件/~$delivery-flow.pptx",
     "工作临时文件/delivery-flow.pptx",
-    "opencode/coder.md",
-    "tmp_files/4-scenarios/writer-workflow.md",
-    "tmp_files/5-advanced/index.md",
-    "tmp_files/5-advanced/25-git-worktree.md",
-    "tmp_files/5-advanced/24-cli-automation.md",
-    "tmp_files/5-advanced/23-web-search.md",
-    "tmp_files/5-advanced/22-debugging.md",
-    "tmp_files/5-advanced/21-thinking-depth.md",
-    "tmp_files/5-advanced/20-compaction.md",
-    "tmp_files/5-advanced/19-lsp.md",
-    "tmp_files/5-advanced/18-formatters.md",
-    "tmp_files/5-advanced/17-tools.md",
     "tmp_files/5-advanced",
     "tmp_files/4-scenarios",
     "tmp_files/appendix",
     "tmp/交付流程图.canvas",
     "tmp/未命名.canvas",
-    "tmp_files",
     "docs/public/favicon.png",
     "docs/public/favicon.svg",
     "docs/public/hero/b2.png",

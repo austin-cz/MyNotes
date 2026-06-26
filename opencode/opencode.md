@@ -9,15 +9,56 @@ tags:
 
 ## 配置
 
-### 文件位置
+### 文件位置与优先级
 
-| 功能     | 配置文件位置                              |
-| ------ | ----------------------------------- |
-| 可执行文件 | `~/.opencode/bin/opencode`、`/opt/homebrew/bin/opencode` 或 `/usr/local/bin/opencode` |
-| 全局配置 | `~/.config/opencode/opencode.json`  |
-| 认证信息 | `~/.local/share/opencode/auth.json` |
+配置按以下顺序加载，后加载的覆盖先加载的冲突键（非冲突设置都保留，是**合并**不是替换）：
 
-### opencode.jsonc 详解
+| 优先级   | 位置                                 | 说明                     |
+| ----- | ---------------------------------- | ---------------------- |
+| 1（最低） | 远程 `.well-known/opencode`          | 远程组织默认配置（通过 Auth 机制获取） |
+| 2     | `~/.config/opencode/opencode.json` | 全局用户配置                 |
+| 3     | `OPENCODE_CONFIG` 环境变量             | 自定义配置文件路径              |
+| 4     | `./opencode.json`                  | 项目根目录配置                |
+| 5     | `./.opencode/opencode.json`        | 项目 .opencode 目录配置（推荐）  |
+| 6     | `OPENCODE_CONFIG_CONTENT` 环境变量     | 内联配置内容（JSON 字符串）       |
+| 7（最高） | 受管配置目录                             | 企业部署，管理员控制             |
+
+> [!info] 企业受管配置
+> 管理员可在系统级目录放置配置，优先级最高：macOS `/Library/Application Support/opencode`、Windows `%ProgramData%\opencode`、Linux `/etc/opencode`。普通用户了解即可。
+
+### 配置目录结构
+
+```
+~/.config/opencode/
+├── opencode.json       # 全局配置
+├── AGENTS.md           # 全局规则
+├── agent/              # 全局 Agent
+├── command/            # 全局命令
+└── plugin/             # 全局插件
+
+项目目录/
+├── opencode.json       # 项目配置（优先级 4）
+├── AGENTS.md           # 项目规则
+└── .opencode/
+    ├── opencode.json   # 项目配置（优先级 5，推荐）
+    ├── agent/          # 项目 Agent
+    ├── command/        # 项目命令
+    └── plugin/         # 项目插件
+```
+
+配置文件名可以是 `opencode.json` 或 `opencode.jsonc`（支持注释的 JSON）：
+
+```jsonc
+{
+  "$schema": "https://opencode.ai/config.json",
+  // 这是注释，JSONC 格式支持
+  "model": "anthropic/claude-opus-4-5-thinking"
+}
+```
+
+### 配置详解
+
+#### 我的配置示例
 
 ```jsonc
 {
@@ -25,9 +66,7 @@ tags:
   "$schema": "https://opencode.ai/config.json",
   "shell": "powershell",
   "plugin": ["superpowers@git+https://github.com/obra/superpowers.git"],
-  // `true`：自动下载更新（默认）,`false`：不检查更新,`"notify"`：通知有新版本，但不自动下载
   "autoupdate": "notify",
-  // 只启用你的内部 provider
   "enabled_providers": ["open_provider"],
   "model": "open_provider/glm-5.1",
   "provider": {
@@ -41,36 +80,94 @@ tags:
         "open_provider/glm-5.1": { "name": "open_provider/glm-5.1" },
         "open_provider/minimax-m3": {
           "name": "open_provider/minimax-m3",
-          "modalities": {
-            "input": ["text", "image"],
-            "output": ["text"]
-          }
+          "modalities": { "input": ["text", "image"], "output": ["text"] }
         },
         "open_provider/qwen3.6-plus": {
           "name": "open_provider/qwen3.6-plus",
-          "modalities": {
-            "input": ["text", "image"],
-            "output": ["text"]
-          }
+          "modalities": { "input": ["text", "image"], "output": ["text"] }
         },
         "open_provider/qwen3.7-max": { "name": "open_provider/qwen3.7-max" }
       }
     }
   },
-  //"permission": {
-  //  "edit": "ask",
-  //},
-  // 指定额外的指令文件（与 AGENTS.md 合并）
-  "instructions": [
-    "workflow.md",
-    "code.md"
-  ],
-  // 控制上下文压缩行为,自动压缩
-  "compaction": {
-    "auto": true
+  "instructions": ["workflow.md", "code.md"],
+  "compaction": { "auto": true }
+}
+```
+
+#### 配置字段速查
+
+| 字段 | 说明 |
+|------|------|
+| `model` | 主模型，格式 `provider/model-id` |
+| `small_model` | 小模型，用于生成标题等轻量任务（不设置则回退主模型） |
+| `default_agent` | 默认 primary agent（`"build"` / `"plan"` / 自定义名称） |
+| `provider` | Provider 配置（注意是**单数**，不是 providers） |
+| `disabled_providers` | 禁用的 Provider 列表（优先级高于 enabled_providers） |
+| `enabled_providers` | 只启用这些 Provider |
+| `username` | 对话中显示的用户名 |
+| `theme` | TUI 主题（注意是 `theme`，不是 `tui.theme`） |
+| `autoupdate` | `true` 自动更新（默认）/ `false` 禁用 / `"notify"` 只通知 |
+| `instructions` | 额外规则文件引用列表 |
+| `compaction` | 上下文压缩配置，`{"auto": true}` 自动压缩 |
+
+Provider `options` 字段：
+
+| 字段 | 说明 |
+|------|------|
+| `apiKey` | API 密钥（推荐用变量替换） |
+| `baseURL` | 自定义 API 地址（代理场景） |
+| `timeout` | 请求超时毫秒数，默认 300000，设 `false` 禁用 |
+| `setCacheKey` | 启用提示缓存键（默认 false） |
+
+> [!info] Amazon Bedrock
+> Bedrock 额外支持 `region`（AWS 区域）、`profile`（AWS 配置文件）、`endpoint`（自定义端点 URL）。
+>
+> ```jsonc
+> {
+>   "provider": {
+>     "amazon-bedrock": {
+>       "options": {
+>         "region": "us-east-1",       // 默认从 AWS_REGION 环境变量或 us-east-1
+>         "profile": "my-aws-profile",     // 来自 ~/.aws/credentials
+>         "endpoint": "https://bedrock-runtime.us-east-1.vpce-xxxxx.amazonaws.com"
+>       }
+>     }
+>   }
+> }
+> ```
+
+#### 变量替换
+
+配置中可用变量动态获取值：
+
+- `{env:变量名}` — 引用环境变量（不存在则替换为空字符串）
+- `{file:路径}` — 引用文件内容（支持相对路径、绝对路径 `/`、home 目录 `~`）
+
+```jsonc
+{
+  "model": "{env:OPENCODE_MODEL}",
+  "provider": {
+    "anthropic": {
+      "options": {
+        "apiKey": "{env:ANTHROPIC_API_KEY}"  // 从环境变量读取
+      }
+    },
+    "openai": {
+      "options": {
+        "apiKey": "{file:~/.secrets/openai-key}"  // 从文件读取
+      }
+    }
   }
 }
 ```
+
+> [!warning] 常见踩坑
+> - 配置不生效 → 检查优先级，项目级覆盖全局
+> - 变量替换失败 → 确认环境变量已设置
+> - JSON 解析错误 → 用 JSONC 格式或检查语法
+> - Provider 不加载 → 检查 `disabled_providers` 列表
+> - 键名写错 → 是 `provider`（单数）不是 `providers`，是 `theme` 不是 `tui.theme`
 
 ### 认证
 
@@ -120,12 +217,22 @@ Credentials ~/.local/share/opencode/auth.json
 
 ### 内置 Agent
 
-| Agent   | 类型       | 擅长                  | 默认权限                                      |
-| ------- | -------- | ------------------- | ----------------------------------------- |
-| Build   | Primary  | 全能开发（默认主 Agent）     | 全能（可读写文件、执行命令）                            |
-| Plan    | Primary  | 分析代码、规划方案、审查建议      | 受限（禁止编辑源代码，仅 `.opencode/plans/*.md` 允许写入） |
-| Explore | Subagent | 快速找到文件、搜索代码、回答代码库问题 | 只读                                        |
-| General | Subagent | 复杂研究、多步骤任务          | 多任务执行（可用 Todo 工具）                         |
+| Agent   | 读写权限  | 命令权限     | 上下文    | 核心定位                   |
+| ------- | ----- | -------- | ------ | ---------------------- |
+| Explore | 只读    | 仅安全查询    | 轻量临时   | 查代码、摸架构、风险调研           |
+| Plan    | 无读写   | 不能执行命令   | 临时     | 方案设计、步骤拆解、风险评估         |
+| General | 读写全权限 | 任意 Shell | 独立子会话  | 批量改造、一次性复杂任务、文档生成      |
+| Build   | 读写全权限 | 任意 Shell | 主线持续保留 | 日常迭代、连续开发、BUG 修复、小范围微调 |
+
+- **Primary Agent**（Build / Plan）：你直接对话的主助手，用 <kbd>Tab</kbd> 切换
+- **Subagent**（Explore / General）：由 Primary Agent 自动调用或你手动用 `@agent名` 调用
+
+Plan 模式下生成的计划文件保存位置：
+
+| 级别  | 路径                                              | 条件      |
+| --- | ----------------------------------------------- | ------- |
+| 项目级 | `.opencode/plans/<时间戳>-<slug>.md`               | 项目有 Git |
+| 全局级 | `~/.local/share/opencode/plans/<时间戳>-<slug>.md` | 项目无版本控制 |
 
 > [!note] 内部 Agent
 > OpenCode 还有 3 个内部 Agent，自动在后台工作，无需手动调用：
@@ -133,56 +240,115 @@ Credentials ~/.local/share/opencode/auth.json
 > - **title**：会话标题生成（创建新会话后自动执行）
 > - **summary**：会话摘要生成（压缩会话时生成摘要）
 
-**类型说明**：
-- **Primary Agent**：你直接对话的主助手，用 <kbd>Tab</kbd> 切换
-- **Subagent**：由 Primary Agent 自动调用或你手动用 `@agent名` 调用的专家助手
-
-### Plan 与 Build
-
-Plan Agent 使用权限隔离保护代码：
-
-| 权限 | Plan Agent | Build Agent |
-|------|-----------|-------------|
-| `edit`（写/改文件） | deny（仅允许计划文件） | allow |
-| `bash`（执行命令） | allow | allow |
-| `read`、`grep`、`glob` 等 | allow | allow |
-
-模式选择：**不确定 → 先用 Plan；确定了 → 直接 Build**
-
-| 你的需求 | 推荐模式 |
-|---------|---------|
-| 写新功能 / 修简单 Bug / 快速原型 | Build |
-| 学习新代码库 / 代码审查 | Plan |
-| 重构核心模块 / 团队协作任务 | 先 Plan 后 Build |
-| 不确定改动影响 | Plan |
-
-Plan 模式下生成的计划文件保存位置：
-
-| 级别 | 路径 | 条件 |
-|------|------|------|
-| 项目级 | `.opencode/plans/<时间戳>-<slug>.md` | 项目有 Git |
-| 全局级 | `~/.local/share/opencode/plans/<时间戳>-<slug>.md` | 项目无版本控制 |
-
 > [!warning] 实验性功能
 > `plan_enter` / `plan_exit` 工具目前是实验性功能，需设置 `OPENCODE_EXPERIMENTAL=true` 或 `OPENCODE_EXPERIMENTAL_PLAN_MODE=true` 才能使用。启用后 AI 可主动调用工具在 Plan/Build 模式间切换（会弹出确认框）。
 
-### 调用与导航
+#### @Explore 代码勘探（只读安全）
 
-- <kbd>Tab</kbd> 切换 Primary Agent（Build ↔ Plan），<kbd>Ctrl</kbd>+<kbd>X</kbd> → <kbd>A</kbd> 查看所有 Agent
-- `@explore 任务描述` 调用 Explore Agent（支持 quick / medium / very thorough 三种深度，用"彻底""非常全面"等描述自动采用深度模式）
-- `@general 任务描述` 调用 General Agent
-- 主 Agent 会根据任务描述自动判断是否需要调用子 Agent
+- 接手陌生项目，梳理目录结构、模块架构、调用链路
+- 全局检索接口、函数、关键字、硬编码配置
+- 统计定时任务、数据表、接口清单
+- 溯源 BUG：追踪参数流转、定位报错堆栈
+- 代码审计、影响范围评估
 
-调用子代理后会创建子会话，用以下快捷键导航：
+```text
+@Explore 梳理当前 EIS 项目分层架构，说明每个目录作用
+@Explore 全局搜索所有数据库硬编码 IP，列出文件路径和行号
+@Explore 追踪登录接口从 Controller 到 DAO 的完整调用链
+```
 
-| 快捷键 | 功能 |
-|--------|------|
-| <kbd>Ctrl</kbd>+<kbd>X</kbd> → <kbd>→</kbd> | 进入子会话 |
-| <kbd>Ctrl</kbd>+<kbd>X</kbd> → <kbd>←</kbd> | 返回父会话 |
-| <kbd>Ctrl</kbd>+<kbd>X</kbd> → <kbd>↑</kbd> | 跳转至最顶层父会话 |
+#### @Plan 方案规划师（只思考不操作）
 
-> [!tip] 任务进度跟踪
-> 复杂任务时，告诉 AI "用 TODO 跟踪进度"，它会自动创建任务列表并逐步更新状态。适合 3 步以上的任务或中途离开后需要了解进度的场景。
+- 复杂需求方案评审：模块重构、架构改造、性能优化
+- 拆解上线步骤、回滚方案、风险点、前置检查项
+- 梳理技术债务、漏洞整改清单
+
+> 不会碰你项目任何文件，只输出结构化方案。
+
+```text
+@Plan 设计 MySQL 慢查询优化整体方案，包含前置检查、参数调整、上线步骤、回滚策略
+@Plan 梳理当前日志体系重构的实施方案、依赖影响、改造先后顺序
+```
+
+#### @General 批量任务执行者（隔离子会话）
+
+- 多步骤批量任务：调研→整理→批量修改→生成文档
+- 一次性独立任务：批量替换配置、抽取公共工具类、生成文档
+- 同时并行多个互不依赖的工作
+
+> 独立子会话运行，不会把大量检索和临时命令堆在主线导致上下文溢出。
+
+```text
+@General 根据前面调研的硬编码 IP，全部替换为环境变量配置，输出修改清单
+@General 扫描项目所有定时任务，整理成运维巡检文档保存到 docs 目录
+```
+
+#### @Build 主线开发（默认 Agent，持续上下文）
+
+- 日常迭代开发：写业务代码、修复 BUG、新增接口、单元测试
+- 连续微调：改完一段代码，接着优化逻辑、调整参数、修复报错
+- 本地调试：根据报错日志不断修正代码
+
+> 上下文全程保留。直接提问不加 `@Agent` 就是默认调用 Build。
+
+```text
+优化这个 ssh 脚本，增加 IP 合法性校验，异常输出日志
+修复当前定时任务重复执行的 BUG
+```
+
+
+### 标准工作流
+
+**Explore → Plan → General → Build**
+
+1. `@Explore` 摸底调研 → 确认代码范围、依赖、影响面
+2. `@Plan` 输出实施方案 → 敲定改造步骤、风险、回滚方案
+3. `@General` 批量落地改造 → 大范围统一修改、文档生成
+4. 主线 Build 精细化调试 → 修正细节报错、迭代优化、本地验证
+
+#### 实战示例：硬编码 IP 改环境变量
+
+```text
+# 第一步：安全调研
+@Explore 全局检索项目下所有硬编码 MySQL 地址 192.168.1.100，
+输出每个文件路径、行号、上下文，统计总引用数
+
+# 第二步：出方案
+@Plan 设计把所有硬编码 MySQL 地址改成环境变量 MYSQL_HOST 的完整改造方案，
+包含改造步骤、兼容兜底策略、上线前置检查、风险点、回滚方案
+
+# 第三步：批量落地
+@General 按方案批量替换所有硬编码为 ${MYSQL_HOST}，增加默认兜底值，
+在 docs 目录生成《MySQL 环境变量改造说明文档.md》
+
+# 第四步：精细化调试（默认 Build，不加 @）
+启动项目检查配置解析是否报错；
+没有配置 MYSQL_HOST 时校验是否兜底为旧 IP；
+优化 shell 脚本增加变量合法性校验
+```
+
+> [!tip] 记忆方法
+> - **Explore** = 装修前上门量房，只勘察不施工
+> - **Plan** = 设计师出施工图和预算，只出方案不动手
+> - **General** = 施工队统一全屋水电改造，批量一次性施工
+> - **Build** = 你自己收尾：缝隙打胶、开关微调、验收
+
+#### 什么时候必须用标准工作流
+
+全程只用默认 Build 也能完成工作，但缺少**权限隔离 + 会话隔离 + 定位约束**，存在三个隐患：
+
+| 隐患      | Build 直接做                              | 标准工作流                         |
+| ------- | -------------------------------------- | ----------------------------- |
+| 调研阶段误操作 | 权限全开，可能顺手改配置                           | `@Explore` 强制只读，绝不可能误变更       |
+| 上下文溢出   | 调研→方案→批量改→调试全部堆在主线，token 消耗快，AI 容易遗忘约束 | `@General` 在独立子会话，批量操作日志不污染主线 |
+| 跳过方案评审  | 可能直接上手写代码执行脚本，漏掉备份和回滚                  | `@Plan` 强制先敲定步骤和回滚策略          |
+
+**极简取舍规则**：
+
+- 本地小需求、单文件修改、调试 BUG → 直接 Build
+- 线上巡检、大范围代码检索 → 必须先 `@Explore`
+- 线上配置变更、架构改造、高危操作 → 严格走标准流程
+
 
 ### Agent 配置
 
@@ -387,7 +553,7 @@ OpenCode 支持三种作用域的规则：
 | 作用域      | 位置                                  | 适用场景      |
 | -------- | ----------------------------------- | --------- |
 | **全局规则** | `~/.config/opencode/AGENTS.md`      | 所有项目通用的偏好 |
-| **项目规则** | 项目根目录 `AGENTS.md`（从当前目录向上遍历到工作目录根） | 项目特定的规范   |
+| **项目规则** | 项目根目录 `AGENTS.md`（从当前目录向上遍历到工作目录根）  | 项目特定的规范   |
 | **配置文件** | `opencode.json` 的 `instructions` 字段 | 引用多个规则文件  |
 
 > [!note] OpenCode 同时支持 `AGENTS.md` 和 `CLAUDE.md`（兼容 Claude Code）。推荐用 `AGENTS.md`，这是 OpenCode 的标准名称。如设置了 `OPENCODE_CONFIG_DIR` 环境变量，也会加载其中的 `AGENTS.md`。
@@ -549,25 +715,17 @@ opencode stats --days 1 --models    # 列出过去24小时的模型消耗
 
 
 
-# 场景应用
+## 场景应用
 
-## coder
 ### 开发工作流
 
 ```
-理解代码(Plan) → 制定方案(Plan) → 实现功能(Build) → 验证测试(Build)
+理解代码(Explore) → 制定方案(Plan) → 实现功能(Build) → 验证测试(Build)
 ```
 
+#### 第 1 步：快速理解代码
 
-### 第 1 步：快速理解代码
-
-
-**为什么**
-接手项目第一步是理解代码结构。
-
-切换到 Plan Agent：
-
-```
+```text
 @explore 帮我梳理这个项目的整体结构，包括：
 1. 主要目录和功能模块
 2. 入口文件和核心流程
@@ -576,20 +734,13 @@ opencode stats --days 1 --models    # 列出过去24小时的模型消耗
 
 深入某个文件：
 
-```
+```text
 @src/services/auth.ts 这个认证模块的逻辑是什么？列出所有导出函数及其作用
 ```
 
-### 第 2 步：制定功能方案
+#### 第 2 步：制定功能方案
 
-<AdInArticle />
-
-**为什么**
-写代码前先想清楚方案。
-
-继续在 Plan Agent：
-
-```
+```text
 我要给这个项目添加一个「邮件通知」功能，当用户注册成功后发送欢迎邮件。
 请帮我分析：
 1. 需要修改哪些文件
@@ -598,14 +749,9 @@ opencode stats --days 1 --models    # 列出过去24小时的模型消耗
 4. 推荐哪种方案，为什么
 ```
 
-### 第 3 步：分步实现功能
+#### 第 3 步：分步实现功能
 
-**为什么**
-复杂功能拆成小步，降低出错风险。
-
-切换到 Build Agent：
-
-```
+```text
 按照方案一实现邮件通知功能：
 
 第一步：创建邮件服务模块 src/services/email.ts
@@ -614,40 +760,22 @@ opencode stats --days 1 --models    # 列出过去24小时的模型消耗
 - 导出 sendEmail 函数
 ```
 
-确认第一步完成后：
+#### 第 4 步：定位 Bug
 
-```
-第二步：在用户注册成功后调用邮件服务
-@src/controllers/auth.ts 在 register 函数成功后添加发送欢迎邮件的逻辑
-```
-
-### 第 4 步：定位 Bug
-
-**为什么**
-修 Bug 前先理解问题。
-
-切换到 Plan Agent：
-
-```
+```text
 用户反馈「登录后页面一直 loading」，请帮我分析：
 1. 可能的原因有哪些
 2. 如何排查（给出具体步骤）
 3. 最可能的问题在哪个文件
 ```
 
-### 第 5 步：修复 Bug
+#### 第 5 步：修复 Bug
 
-**为什么**
-定位清楚后再动手修复。
-
-切换到 Build Agent：
-
-```
+```text
 @src/hooks/useAuth.ts 问题定位到这里：
 - 登录成功后 isLoading 没有重置为 false
 - 请修复这个问题
 ```
-
 
 ### 重构安全三步法
 
@@ -655,14 +783,9 @@ opencode stats --days 1 --models    # 列出过去24小时的模型消耗
 1. 先有测试 → 2. 小步重构 → 3. 测试通过
 ```
 
-### 第 1 步：识别代码坏味道
+#### 第 1 步：识别代码坏味道
 
-**为什么**
-先诊断，再治疗。
-
-切换到 Plan Agent：
-
-```
+```text
 @src/utils/data.ts 请分析这个文件的代码质量：
 1. 列出发现的"坏味道"
 2. 每个问题的严重程度（高/中/低）
@@ -670,14 +793,9 @@ opencode stats --days 1 --models    # 列出过去24小时的模型消耗
 4. 重构的优先级建议
 ```
 
-### 第 2 步：先生成测试
+#### 第 2 步：先生成测试
 
-**为什么**
-有测试才能安全重构。
-
-切换到 Build Agent：
-
-```
+```text
 @src/utils/data.ts 为这个文件生成单元测试：
 1. 使用 Vitest 框架
 2. 覆盖所有导出函数
@@ -685,12 +803,9 @@ opencode stats --days 1 --models    # 列出过去24小时的模型消耗
 4. 保存为 src/utils/data.test.ts
 ```
 
-### 第 3 步：安全重构
+#### 第 3 步：安全重构
 
-**为什么**  
-小步重构，每步验证。
-
-```
+```text
 @src/utils/data.ts 请重构 parseUserData 函数：
 - 问题：函数过长（50 行），职责不单一
 - 要求：拆分成 3 个小函数
@@ -698,12 +813,9 @@ opencode stats --days 1 --models    # 列出过去24小时的模型消耗
 - 重构后运行测试确认
 ```
 
-### 第 4 步：补充边界测试
+#### 第 4 步：补充边界测试
 
-**为什么**  
-边界条件往往是 Bug 高发区。
-
-```
+```text
 @src/utils/data.ts @src/utils/data.test.ts
 
 分析代码的边界条件，补充以下测试：
@@ -713,18 +825,13 @@ opencode stats --days 1 --models    # 列出过去24小时的模型消耗
 4. 并发情况（如果有异步操作）
 ```
 
-### 第 5 步：运行测试验证
+#### 第 5 步：运行测试验证
 
-**为什么**  
-确认重构没有破坏功能。
+以 `!` 开头的消息会执行 shell 命令并把输出带进对话：
 
-> 在 OpenCode TUI 里，以 `!` 开头的消息会执行 shell 命令，并把输出带进对话：https://opencode.ai/docs/tui
-
-```
+```text
 !npm test src/utils/data.test.ts
 ```
-
-**你应该看到**：所有测试通过
 
 
 ### 文档自动化
@@ -736,172 +843,93 @@ opencode stats --days 1 --models    # 列出过去24小时的模型消耗
 | Commit 消息 | 每次提交 | 分析变更生成 |
 | PR 描述 | 提交 PR | 汇总 commit 生成 |
 
-### 第 1 步：生成 README
+#### 生成 README
 
-**为什么**
-好的 README 是项目的门面。
-
-切换到 Build Agent：
-
-```
+```text
 @explore 分析项目结构，生成一个专业的 README.md：
-
-包含以下部分：
 1. 项目名称和简介
-2. 功能特性（Feature list）
+2. 功能特性
 3. 快速开始（安装和运行）
 4. 使用示例
 5. 配置说明
 6. 贡献指南
 7. 许可证
-
 保存为 README.md
 ```
 
-### 第 2 步：生成 commit 消息
+#### 生成 commit 消息
 
-**为什么**  
-规范的 commit 消息便于追溯。
+以 `!` 开头执行 shell 命令，先把变更带入对话：
 
-先查看变更：
-
-> 在 OpenCode TUI 里，以 `!` 开头的消息会执行 shell 命令，并把输出带进对话：https://opencode.ai/docs/tui
-
-```
+```text
 !git diff
 ```
 
 然后让 AI 生成：
 
-```
+```text
 根据以上变更，生成符合 Conventional Commits 规范的 commit 消息：
 - 格式：type(scope): description
 - type：feat/fix/docs/style/refactor/test/chore
 - 简洁明了，不超过 50 字符
 ```
 
-执行提交：
+#### 生成 PR 描述
 
-```
-!git add . && git commit -m "feat(auth): add email verification on registration"
-```
-
-### 第 3 步：生成 PR 描述
-
-<AdInArticle />
-
-**为什么**  
-清晰的 PR 描述帮助 reviewer 理解。
-
-> 获取最近提交列表（示例）：
-
-```
+```text
 !git log --oneline -10
-```
 
-```
 根据以上 commit 历史，生成 PR 描述：
-
-## 变更概述
-（一句话总结）
-
-## 变更详情
-（分点列出主要修改）
-
-## 测试情况
-（测试了什么）
-
-## 相关 Issue
-（关联的 issue 编号）
+## 变更概述 / 变更详情 / 测试情况 / 相关 Issue
 ```
 
-### 第 4 步：使用 /undo 撤销
+#### 撤销 AI 修改
 
-**为什么**  
-AI 修改错了可以撤销。
-
-如果 AI 的修改不满意：
-
-```
+```text
 /undo
 ```
 
-**你应该看到**：最近一次对话变更被撤销，相关文件改动也会被回滚（需要 Git 仓库）。更多细节见 https://opencode.ai/docs/tui#undo 或 [附录/命令速查](commands.md)。
+> 撤销文件操作需要项目是 Git 仓库。更多细节见 https://opencode.ai/docs/tui#undo
 
+#### 补充代码注释
 
-### 第 5 步：补充代码注释
-
-**为什么**  
-好的注释是活文档。
-
-```
+```text
 @src/services/payment.ts 为这个文件添加 JSDoc 注释：
 - 每个导出函数都加
 - 包含参数说明和返回值
 - 包含使用示例
 ```
 
+### CI/CD 集成
 
-### CI/CD集成
-<AdInArticle />
-
-- **优先用 GitHub Agent**：不自己在 workflow 里手写“安装 CLI + 跑脚本 + 发评论”的胶水代码。
-- **触发方式统一**：在评论里写 `/oc` 或 `/opencode`，让 Actions runner 执行。
-
-官方说明：https://opencode.ai/docs/github
-
-### 第 1 步：运行安装向导
-
-在你的 GitHub 仓库根目录执行：
+- **优先用 GitHub Agent**：不自己在 workflow 里手写胶水代码
+- **触发方式**：在评论里写 `/oc` 或 `/opencode`
+- 官方说明：https://opencode.ai/docs/github
 
 ```bash
+# 运行安装向导
 opencode github install
+
+# 提交并推送 workflow 文件（通常是 .github/workflows/opencode.yml）
+git add . && git push
 ```
 
-安装向导会引导你完成：安装 GitHub App、生成 workflow 文件、提示需要配置哪些 secrets。
-
-### 第 2 步：提交并推送 workflow
-
-把生成的 workflow 文件提交并推送到仓库（通常是 `.github/workflows/opencode.yml`）。
-
-### 第 3 步：用评论触发
-
-在 Issue 或 PR 里评论（示例）：
+在 Issue 或 PR 里评论即可触发：
 
 ```text
 /oc summarize
 ```
 
-或者：
-
-```text
-/opencode summarize
-```
-
-
-
 ## 专属开发 Agent
-> 💡 **一句话总结**：创建 Code Reviewer、Security Auditor、Test Writer 等专属开发 Agent。
 
+Agent 配置文件放置位置：
+- 全局：`~/.config/opencode/agent/`
+- 项目级：`.opencode/agent/`
+- 调用名默认来自文件名：`code-reviewer.md` → `@code-reviewer`
 
 ### 第 1 步：创建 Code Reviewer Agent
 
-**为什么**  
-专业的代码审查 Agent 能发现更多问题。
-
-```bash
-mkdir -p ~/.config/opencode/agent
-```
-
-> Agent 配置文件放置位置：
-> - 全局：`~/.config/opencode/agent/`
-> - 项目级：`.opencode/agent/`
->
-> Agent 的调用名默认来自文件名：例如 `code-reviewer.md` 对应 `@code-reviewer`。
-
-创建配置：
-
-```
+```text
 帮我创建一个 Code Reviewer Agent，保存到 ~/.config/opencode/agent/code-reviewer.md：
 
 ---
@@ -913,7 +941,6 @@ permission:
   edit: deny
   bash: deny
 ---
-
 
 # Code Reviewer Agent
 
@@ -947,18 +974,9 @@ permission:
 - **建议**：修复建议
 ```
 
-来源（Agent Markdown 字段与 tools 写法示例）：
-- `opencode/packages/web/src/content/docs/agents.mdx:163`
-- `opencode/packages/web/src/content/docs/agents.mdx:167`
-- `opencode/packages/web/src/content/docs/agents.mdx:169`
-
 ### 第 2 步：创建 Security Auditor Agent
-<AdInArticle />
 
-**为什么**  
-安全审计需要专门的视角。
-
-```
+```text
 帮我创建一个 Security Auditor Agent，保存到 ~/.config/opencode/agent/security-auditor.md：
 
 ---
@@ -1010,10 +1028,7 @@ permission:
 
 ### 第 3 步：创建 Test Writer Agent
 
-**为什么**  
-专门的测试 Agent 能生成更全面的测试。
-
-```
+```text
 帮我创建一个 Test Writer Agent，保存到 ~/.config/opencode/agent/test-writer.md：
 
 ---
@@ -1052,41 +1067,17 @@ permission:
 
 ### 第 4 步：使用专属 Agent
 
-**为什么**  
-调用专属 Agent 完成任务。
-
-重启 OpenCode：
-
-```bash
-opencode
-```
-
-调用 Code Reviewer：
-
-```
+```text
 @code-reviewer @src/services/auth.ts 请审查这个认证模块
-```
-
-调用 Security Auditor：
-
-```
 @security-auditor @src/controllers/ 对这个目录进行安全审计
-```
-
-调用 Test Writer：
-
-```
 @test-writer @src/utils/validate.ts 为这个文件生成完整的测试用例
 ```
 
-### 第 5 步：组合工作流
-
-**为什么**  
-多个 Agent 协作更高效。
+### 第 5 步：组合工作流：command
 
 创建一个综合审查命令 `.opencode/command/全面审查.md`：
 
-```
+```text
 ---
 description: 综合代码审查
 ---
@@ -1101,37 +1092,9 @@ description: 综合代码审查
 最后汇总所有问题，按优先级排序。
 ```
 
-来源（自定义命令目录与参数占位符）：
-- `opencode/packages/web/src/content/docs/commands.mdx:20`
-- `opencode/packages/web/src/content/docs/commands.mdx:113`
-- `opencode/packages/opencode/src/config/config.ts:191`
-- `opencode/packages/opencode/src/command/index.ts:49`
-
 使用：
 
-```
+```text
 /全面审查 src/services/payment.ts
 ```
 
----
-
-## 检查点 ✅
-
-> 全部通过才能继续
-
-- [ ] 创建了 Code Reviewer Agent
-- [ ] 创建了 Security Auditor Agent
-- [ ] 创建了 Test Writer Agent
-- [ ] 能用 @agent名 调用
-
----
-
-## 踩坑提醒
-
-| 现象 | 原因 | 解决 |
-|-----|-----|-----|
-| @agent名 没反应 | 调用名和文件名不一致（或拼写错误） | 确认文件名（不含 .md）就是调用名，例如 `code-reviewer.md` → `@code-reviewer` |
-| Agent 配置不生效 | 配置文件不在 agent 目录 | 放到 `~/.config/opencode/agent/`（全局）或 `.opencode/agent/`（项目级） |
-| 多 Agent 结果不一致 | 各自独立执行 | 用命令串联，统一汇总 |
-
----
