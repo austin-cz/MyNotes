@@ -6,7 +6,7 @@
       {
         "id": "26e55b0c9b68e5e3",
         "type": "tabs",
-        "dimension": 68.50117096018735,
+        "dimension": 70.95032397408207,
         "children": [
           {
             "id": "6c970fdfeb776461",
@@ -14,12 +14,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "opencode/opencode.md",
+                "file": "opencode/Git.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "opencode"
+              "title": "Git"
             },
             "group": "69d7e551e432f0e1"
           }
@@ -28,7 +28,7 @@
       {
         "id": "fc1811e1f1e7ad31",
         "type": "tabs",
-        "dimension": 31.498829039812648,
+        "dimension": 29.049676025917925,
         "children": [
           {
             "id": "3f04b27912c5f4c8",
@@ -36,13 +36,13 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "opencode/opencode.md",
+                "file": "opencode/Git.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
               },
               "icon": "lucide-list",
-              "title": "opencode 的大纲"
+              "title": "Git 的大纲"
             },
             "group": "69d7e551e432f0e1"
           }
@@ -216,7 +216,7 @@
       }
     ],
     "direction": "horizontal",
-    "width": 402.5
+    "width": 304.5
   },
   "left-ribbon": {
     "hiddenItems": {
@@ -235,9 +235,10 @@
   },
   "active": "6c970fdfeb776461",
   "lastOpenFiles": [
-    "opencode/opencode-mindmap.canvas",
     "opencode/opencode.md",
     "tmp_files/jiaofu.md",
+    "tmp_files/边缘智能小站EIS原理介绍_培训讲义.md",
+    "opencode/opencode-mindmap.canvas",
     "AGENTS.md",
     "opencode.md#自定义工具.md",
     "tmp_files/appendix/troubleshoot.md",
